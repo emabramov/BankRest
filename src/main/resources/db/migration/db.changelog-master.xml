@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    
+    <changeSet id="1" author="emabramov">
+        <createTable tableName="users">
+            <column name="id" autoIncrement="true" type="int">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    
+    <changeSet id="addColumnToUsers" author="emabramov">
+        <addColumn tableName="users">
+            <column name="name" type="text" >
+                <constraints nullable="false"/>
+            </column>
+            <column name="lastname" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="text"/>
+            <column name="phone_number" type="integer">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    
+    <changeSet id="addCardEntityTable" author="emabramov">
+        <sql>CREATE TYPE card_status_enum AS ENUM ('ACTIVE', 'BLOCKED', 'EXPIRED')</sql>
+        <createTable tableName="cards">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="card_number" type="bigint" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="card_status" type="card_status_enum">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="numeric(19,2)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    
+    <changeSet id="addRoleTable" author="emabramov">
+        <sql>CREATE TYPE role_enum AS ENUM('ADMIN', 'USER')</sql>
+        <createTable tableName="role">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="role" type="role_enum">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    
+    <changeSet id="changeInRoleTableRoleToUnique" author="">
+        <addUniqueConstraint tableName="role" columnNames="role"/>
+    </changeSet>
+    
+    <changeSet id="addRoleColumnToUsers" author="emabramov">
+        <addColumn tableName="users">
+            <column name="role" type="role_enum"/>
+        </addColumn>
+    </changeSet>
+    
+    <changeSet id="addForeignKeysToUser" author="emabramov">
+        <addForeignKeyConstraint baseTableName="users" baseColumnNames="role" constraintName="fk_role" referencedTableName="role"
+                                 referencedColumnNames="role"/>
+    </changeSet>
+
+    <changeSet id="changePhoneColumnInUsersToBigint" author="emabramov">
+        <modifyDataType tableName="users" columnName="phone_number" newDataType="bigint"/>
+    </changeSet>
+
+    <changeSet id="dropAllRoleRecords" author="emabramov">
+        <dropColumn tableName="users" columnName="role"/>
+        <dropTable tableName="role"/>
+    </changeSet>
+    
+    <changeSet id="addForeignKeyToCardsTable" author="emabramov">
+        <addColumn tableName="cards">
+            <column name="user_id" type="bigint"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="cards" baseColumnNames="user_id" constraintName="fk_user_id" referencedTableName="users"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="changeTypeOfUsersIfToBigint" author="emabramov">
+        <modifyDataType tableName="users" columnName="id" newDataType="bigint"/>
+    </changeSet>
+
+    <changeSet id="addRoleTableAgain" author="emabramov">
+        <sql>CREATE TYPE role_type AS ENUM('ROLE_ADMIN', 'ROLE_USER')</sql>
+        <createTable tableName="authorities">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="authority" type="role_type"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="addColumnUsernameAndPasswordToUsersTable" author="emabramov">
+        <addColumn tableName="users">
+            <column name="username" type="text">
+                <constraints unique="true"/>
+            </column>
+            <column name="password" type="text"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="addColumnUser_idToRolTable" author="emabramov">
+        <addColumn tableName="authorities">
+            <column name="user_id" type="bigint"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="authorities"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_user_id_to_authorities"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="modifyUserTableChangeNullableToTrueForNameLastnameAndPhone_number" author="emabramov">
+        <dropNotNullConstraint tableName="users" columnName="name"/>
+        <dropNotNullConstraint tableName="users" columnName="lastname"/>
+        <addNotNullConstraint tableName="users" columnName="phone_number"/>
+    </changeSet>
+
+    <changeSet id="modifyUserTableChangeNullableToTrueForPhone_number" author="emabramov">
+        <dropNotNullConstraint tableName="users" columnName="phone_number"/>
+    </changeSet>
+
+    <changeSet id="addFKConstraintOnDeleteCascadeToCardsTable" author="emabramov">
+        <dropForeignKeyConstraint baseTableName="cards" constraintName="fk_user_id"/>
+        <addForeignKeyConstraint baseTableName="cards" baseColumnNames="user_id" constraintName="fk_user_id" referencedTableName="users"
+                                 referencedColumnNames="id" onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="modifyKFConstraintInAuthoritiesTables" author="emabramov">
+        <dropForeignKeyConstraint baseTableName="authorities" constraintName="fk_user_id_to_authorities"/>
+        <addForeignKeyConstraint baseTableName="authorities"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_user_id_to_authorities"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+    
+    <changeSet id="removeEnumTypeRole_enum" author="emabramov">
+        <sql>DROP TYPE role_enum</sql>
+    </changeSet>
+</databaseChangeLog>
